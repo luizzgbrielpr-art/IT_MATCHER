@@ -7,7 +7,7 @@ import { ReviewStatusBadge } from '@/components/reviews/ReviewStatusBadge';
 import { MatchingBreakdownModal } from './MatchingBreakdownModal';
 import { HumanReviewModal } from '@/components/reviews/HumanReviewModal';
 import { Button } from '@/components/ui/Button';
-import { Eye, UserCheck, Check, X, Award, AlertCircle, FileText } from 'lucide-react';
+import { Eye, UserCheck, Check, X, Award, FileText } from 'lucide-react';
 
 export type RankingItem = MatchingResult & {
   reviewStatus?: string;
@@ -49,8 +49,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                 <th className="py-3.5 px-4 text-center w-16">Posição</th>
                 <th className="py-3.5 px-4">Candidato</th>
                 <th className="py-3.5 px-4">Senioridade & Exp.</th>
-                <th className="py-3.5 px-4">Smart Matching</th>
-                <th className="py-3.5 px-4">Critérios Técnicos</th>
+                <th className="py-3.5 px-4">Compatibilidade (%)</th>
+                <th className="py-3.5 px-4">Skills Compatíveis</th>
                 <th className="py-3.5 px-4">Status da Triagem</th>
                 <th className="py-3.5 px-4 text-right">Ações</th>
               </tr>
@@ -59,6 +59,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
               {results.map((item, index) => {
                 const rankNumber = index + 1;
                 const isTop = rankNumber <= 3 && item.score >= 80;
+                const totalSkills = item.allRequirements.length;
+                const matchedCount = item.matchedSkills.length;
 
                 return (
                   <tr
@@ -70,7 +72,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                       <span
                         className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
                           isTop
-                            ? 'bg-indigo-600 text-white shadow-xs'
+                            ? 'bg-red-600 text-white shadow-xs'
                             : 'bg-slate-100 text-slate-700'
                         }`}
                       >
@@ -82,8 +84,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                     <td className="py-4 px-4">
                       <div className="font-bold text-slate-900 text-sm">{item.candidateName}</div>
                       {item.candidate?.hasResume && (
-                        <span className="inline-flex items-center gap-1 text-[10px] text-indigo-600 mt-0.5">
-                          <FileText className="w-3 h-3" /> CV Validado
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 mt-0.5">
+                          <FileText className="w-3 h-3 text-emerald-600" /> CV Validado
                         </span>
                       )}
                     </td>
@@ -92,7 +94,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                     <td className="py-4 px-4">
                       <div className="text-xs font-semibold text-slate-800">{item.levelComparison.candidateLevel}</div>
                       <div className="text-[11px] text-slate-500">
-                        {item.experienceComparison.candidateYears} ano(s) de experiência
+                        {item.experienceComparison.candidateYears} ano(s) exp.
                       </div>
                     </td>
 
@@ -106,29 +108,34 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                       />
                     </td>
 
-                    {/* Resumo de Requisitos (✓ e ✕) */}
+                    {/* Resumo de Requisitos e Contador Sintético (8 de 10) */}
                     <td className="py-4 px-4">
-                      <div className="flex flex-wrap gap-1 max-w-xs">
-                        {item.matchedSkills.map((m) => (
-                          <span
-                            key={m.skillName}
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium"
-                            title={`✓ ${m.skillName} (+${m.weight}%)`}
-                          >
-                            <Check className="w-3 h-3 text-emerald-600" />
-                            {m.skillName}
-                          </span>
-                        ))}
-                        {item.missingSkills.map((m) => (
-                          <span
-                            key={m.skillName}
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-rose-50 text-rose-700 border border-rose-200 font-medium opacity-75"
-                            title={`✕ ${m.skillName} (${m.weight}% não pontuado)`}
-                          >
-                            <X className="w-3 h-3 text-rose-500" />
-                            {m.skillName}
-                          </span>
-                        ))}
+                      <div className="space-y-1 max-w-xs">
+                        <div className="text-xs font-bold text-indigo-700">
+                          {matchedCount} de {totalSkills} skills compatíveis
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {item.matchedSkills.map((m) => (
+                            <span
+                              key={m.skillName}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium"
+                              title={`✓ ${m.skillName} (+${m.weight}%)`}
+                            >
+                              <Check className="w-3 h-3 text-emerald-600" />
+                              {m.skillName}
+                            </span>
+                          ))}
+                          {item.missingSkills.map((m) => (
+                            <span
+                              key={m.skillName}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-rose-50 text-rose-700 border border-rose-200 font-medium opacity-75"
+                              title={`✕ ${m.skillName} (${m.weight}% não pontuado)`}
+                            >
+                              <X className="w-3 h-3 text-rose-500" />
+                              {m.skillName}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </td>
 
@@ -148,7 +155,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                           onClick={() => setSelectedForDetails(item)}
                           title="Ver transparência e fórmula do matching"
                         >
-                          Detalhes
+                          Ver detalhes
                         </Button>
                         <Button
                           type="button"
@@ -177,7 +184,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         matching={selectedForDetails}
         onOpenReview={(m) => {
           setSelectedForDetails(null);
-          setSelectedForReview(m);
+          setSelectedForReview(m as RankingItem);
         }}
       />
 

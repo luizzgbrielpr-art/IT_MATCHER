@@ -10,6 +10,49 @@ export const ProfessionalLevels: [ProfessionalLevel, ...ProfessionalLevel[]] = [
   'Tech Lead',
 ];
 
+export const COMPANY_TYPES = [
+  'Empresa de Tecnologia',
+  'Startup',
+  'Incubadora',
+  'Aceleradora',
+  'Agência de Tecnologia',
+  'Consultoria de TI',
+  'Software House',
+  'Empresa tradicional',
+  'Instituição de Ensino',
+  'Órgão Público',
+  'Organização sem fins lucrativos',
+  'Outro',
+] as const;
+
+export const COMPANY_INDUSTRIES = [
+  'Desenvolvimento de Software',
+  'Dados / BI',
+  'Cybersecurity',
+  'Cloud',
+  'Infraestrutura',
+  'Suporte Técnico',
+  'Inteligência Artificial / Machine Learning',
+  'DevOps',
+  'Redes',
+  'Desenvolvimento Web',
+  'Desenvolvimento Mobile',
+  'Banco de Dados',
+  'Outro',
+] as const;
+
+export const COMPANY_SIZES = [
+  '1–10 funcionários',
+  '11–50 funcionários',
+  '51–200 funcionários',
+  '201–500 funcionários',
+  '500+ funcionários',
+] as const;
+
+export const WORK_MODELS = ['Presencial', 'Híbrido', 'Remoto'] as const;
+
+export const CONTRACT_TYPES = ['CLT', 'PJ', 'Estágio', 'Terceirizado', 'Outro'] as const;
+
 export const JobSkillSchema = z.object({
   name: z.string().min(1, 'Nome da competência é obrigatório').trim(),
   weight: z.number().min(1, 'O peso deve ser maior que 0%').max(100, 'O peso não pode exceder 100%'),
@@ -23,6 +66,23 @@ export const JobSchema = z.object({
   minExperienceYears: z.number().min(0, 'A experiência mínima não pode ser negativa'),
   description: z.string().min(10, 'A descrição deve ter no mínimo 10 caracteres').trim(),
   skills: z.array(JobSkillSchema).min(1, 'A vaga deve conter pelo menos uma competência técnica'),
+
+  // Campos de Empresa / Organização (Acréscimo)
+  companyType: z.string().optional(),
+  companyIndustry: z.string().optional(),
+  companySize: z.string().optional(),
+  companyLocation: z.string().optional(),
+  companyWebsite: z.string().url('Site deve ser uma URL válida (ex: https://empresa.com)').or(z.literal('')).optional(),
+  companyDescription: z.string().optional(),
+
+  // Informações Complementares da Vaga (Acréscimo)
+  workModel: z.string().optional(),
+  location: z.string().optional(),
+  salaryRange: z.string().optional(),
+  contractType: z.string().optional(),
+  mandatoryRequirements: z.string().optional(),
+  desirableRequirements: z.string().optional(),
+  benefits: z.string().optional(),
 }).refine((data) => {
   const totalWeight = data.skills.reduce((acc, curr) => acc + curr.weight, 0);
   return totalWeight === 100;

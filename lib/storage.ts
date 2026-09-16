@@ -1,4 +1,4 @@
-import { Job, Candidate, HumanReview, AuditLog, CreateJobInput, CreateCandidateInput, CreateReviewInput } from '@/types';
+import { Job, Candidate, HumanReview, AuditLog, CreateJobInput, CreateCandidateInput, CreateReviewInput, User, UpdateUserProfileInput, CURRENT_USER } from '@/types';
 import { INITIAL_JOBS, INITIAL_CANDIDATES, INITIAL_REVIEWS, INITIAL_AUDIT_LOGS } from './mock-data';
 import { createAuditLogEntry } from './security';
 
@@ -8,6 +8,7 @@ class InMemoryDataStore {
   private candidates: Map<string, Candidate> = new Map();
   private reviews: Map<string, HumanReview> = new Map();
   private auditLogs: AuditLog[] = [];
+  private currentUser: User = { ...CURRENT_USER };
 
   constructor() {
     this.seed();
@@ -18,6 +19,33 @@ class InMemoryDataStore {
     INITIAL_CANDIDATES.forEach((cand) => this.candidates.set(cand.id, { ...cand }));
     INITIAL_REVIEWS.forEach((rev) => this.reviews.set(`${rev.jobId}_${rev.candidateId}`, { ...rev }));
     this.auditLogs = [...INITIAL_AUDIT_LOGS];
+  }
+
+  // --- PERFIL DO RECRUTADOR ---
+  public getUserProfile(): User {
+    return { ...this.currentUser };
+  }
+
+  public updateUserProfile(input: UpdateUserProfileInput): User {
+    this.currentUser = {
+      ...this.currentUser,
+      ...input,
+    };
+
+    this.addAuditLog(
+      createAuditLogEntry(
+        'REVIEW_UPDATED',
+        `Perfil do recrutador "${this.currentUser.name}" atualizado com sucesso.`,
+        {
+          actor: {
+            name: this.currentUser.name,
+            role: this.currentUser.role,
+          }
+        }
+      )
+    );
+
+    return { ...this.currentUser };
   }
 
   // --- VAGAS (JOBS) ---
@@ -46,11 +74,24 @@ class InMemoryDataStore {
         id: `sk-${Date.now()}-${idx}`,
         name: s.name,
         weight: s.weight,
-        required: true,
+        required: s.required !== undefined ? s.required : true,
       })),
       status: 'ativa',
       createdAt: now,
       updatedAt: now,
+      companyType: input.companyType,
+      companyIndustry: input.companyIndustry,
+      companySize: input.companySize,
+      companyLocation: input.companyLocation,
+      companyWebsite: input.companyWebsite,
+      companyDescription: input.companyDescription,
+      workModel: input.workModel,
+      location: input.location,
+      salaryRange: input.salaryRange,
+      contractType: input.contractType,
+      mandatoryRequirements: input.mandatoryRequirements,
+      desirableRequirements: input.desirableRequirements,
+      benefits: input.benefits,
     };
 
     this.jobs.set(id, newJob);
@@ -139,7 +180,7 @@ class InMemoryDataStore {
       jobTitle,
       score,
       status: input.status,
-      reviewerName: input.reviewerName || 'Recrutador Responsável',
+      reviewerName: input.reviewerName || this.currentUser.name,
       reviewerRole: 'Recrutador',
       notes: input.notes,
       technicalFeedback: input.technicalFeedback,
@@ -164,7 +205,7 @@ class InMemoryDataStore {
           previousStatus: existing ? existing.status : 'Pendente de revisão',
           newStatus: input.status,
           actor: {
-            name: input.reviewerName || 'Recrutador Responsável',
+            name: input.reviewerName || this.currentUser.name,
             role: 'Recrutador',
           },
         }

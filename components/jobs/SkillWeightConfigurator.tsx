@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 export interface ConfiguredSkill {
   name: string;
   weight: number;
+  required?: boolean;
 }
 
 interface SkillWeightConfiguratorProps {
@@ -26,6 +27,7 @@ export const SkillWeightConfigurator: React.FC<SkillWeightConfiguratorProps> = (
 }) => {
   const [newSkillName, setNewSkillName] = useState('');
   const [newSkillWeight, setNewSkillWeight] = useState<number>(20);
+  const [newSkillRequired, setNewSkillRequired] = useState<boolean>(true);
 
   const totalWeight = skills.reduce((sum, s) => sum + (Number(s.weight) || 0), 0);
   const isValidTotal = totalWeight === 100;
@@ -37,9 +39,15 @@ export const SkillWeightConfigurator: React.FC<SkillWeightConfiguratorProps> = (
     if (!name) return;
     if (skills.some((s) => s.name.toLowerCase() === name.toLowerCase())) return;
 
-    onChange([...skills, { name, weight }]);
+    onChange([...skills, { name, weight, required: newSkillRequired }]);
     setNewSkillName('');
     setNewSkillWeight(15);
+  };
+
+  const handleToggleRequired = (index: number) => {
+    const updated = [...skills];
+    updated[index].required = !(updated[index].required ?? true);
+    onChange(updated);
   };
 
   const handleUpdateWeight = (index: number, newWeight: number) => {
@@ -69,10 +77,10 @@ export const SkillWeightConfigurator: React.FC<SkillWeightConfiguratorProps> = (
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <label className="block text-sm font-bold text-slate-800">
-            Competências Técnicas e Pesos de Importância *
+            Competências Técnicas, Pesos e Obrigatoriedade *
           </label>
           <p className="text-xs text-slate-500">
-            Defina as skills exigidas e o percentual de relevância de cada uma no cálculo do matching.
+            Defina as skills exigidas, a obrigatoriedade e o percentual de relevância de cada uma no cálculo do matching.
           </p>
         </div>
 
@@ -119,7 +127,7 @@ export const SkillWeightConfigurator: React.FC<SkillWeightConfiguratorProps> = (
                 key={idx}
                 className={`${color} h-full transition-all duration-300`}
                 style={{ width: `${Math.min(s.weight, 100)}%` }}
-                title={`${s.name}: ${s.weight}%`}
+                title={`${s.name}: ${s.weight}% (${(s.required ?? true) ? 'Obrigatória' : 'Desejável'})`}
               />
             );
           })}
@@ -129,46 +137,64 @@ export const SkillWeightConfigurator: React.FC<SkillWeightConfiguratorProps> = (
       {/* Lista de Skills Configuradas */}
       {skills.length > 0 ? (
         <div className="space-y-2 border border-slate-200 rounded-xl p-3 bg-white">
-          <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-slate-500 px-2 pb-1 border-b border-slate-100">
-            <div className="col-span-6">Competência</div>
-            <div className="col-span-4 text-center">Peso (%)</div>
-            <div className="col-span-2 text-right">Ação</div>
+          <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-slate-500 px-2 pb-1 border-b border-slate-100 items-center">
+            <div className="col-span-5">Competência</div>
+            <div className="col-span-3 text-center">Obrigatoriedade</div>
+            <div className="col-span-3 text-center">Peso (%)</div>
+            <div className="col-span-1 text-right">Ação</div>
           </div>
 
-          {skills.map((skill, index) => (
-            <div
-              key={index}
-              className="grid grid-cols-12 gap-2 items-center p-2 rounded-lg hover:bg-slate-50 transition-colors"
-            >
-              <div className="col-span-6 font-medium text-sm text-slate-800 flex items-center gap-2 truncate">
-                <span className="w-2 h-2 rounded-full bg-indigo-600" />
-                <span className="truncate">{skill.name}</span>
-              </div>
+          {skills.map((skill, index) => {
+            const isRequired = skill.required ?? true;
+            return (
+              <div
+                key={index}
+                className="grid grid-cols-12 gap-2 items-center p-2 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                <div className="col-span-5 font-medium text-sm text-slate-800 flex items-center gap-2 truncate">
+                  <span className={`w-2 h-2 rounded-full ${isRequired ? 'bg-indigo-600' : 'bg-slate-400'}`} />
+                  <span className="truncate">{skill.name}</span>
+                </div>
 
-              <div className="col-span-4 flex items-center justify-center gap-2">
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={skill.weight}
-                  onChange={(e) => handleUpdateWeight(index, Number(e.target.value))}
-                  className="w-16 px-2 py-1 text-center font-bold text-slate-800 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
-                />
-                <span className="text-xs text-slate-500">%</span>
-              </div>
+                <div className="col-span-3 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleRequired(index)}
+                    className={`px-2.5 py-1 text-xs font-semibold rounded-full border cursor-pointer transition-colors ${
+                      isRequired
+                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+                        : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                    }`}
+                  >
+                    {isRequired ? 'Obrigatória' : 'Desejável'}
+                  </button>
+                </div>
 
-              <div className="col-span-2 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => handleRemoveSkill(index)}
-                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                  aria-label="Remover skill"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="col-span-3 flex items-center justify-center gap-1">
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={skill.weight}
+                    onChange={(e) => handleUpdateWeight(index, Number(e.target.value))}
+                    className="w-16 px-2 py-1 text-center font-bold text-slate-800 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <span className="text-xs text-slate-500">%</span>
+                </div>
+
+                <div className="col-span-1 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSkill(index)}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                    aria-label="Remover skill"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
