@@ -123,6 +123,7 @@
     --font-weight-extrabold: 800;
     --font-weight-black: 900;
     --tracking-tight: -0.025em;
+    --tracking-wide: 0.025em;
     --tracking-wider: 0.05em;
     --leading-tight: 1.25;
     --leading-snug: 1.375;
@@ -376,20 +377,11 @@
   .col-span-1 {
     grid-column: span 1 / span 1;
   }
-  .col-span-2 {
-    grid-column: span 2 / span 2;
-  }
   .col-span-3 {
     grid-column: span 3 / span 3;
   }
-  .col-span-4 {
-    grid-column: span 4 / span 4;
-  }
   .col-span-5 {
     grid-column: span 5 / span 5;
-  }
-  .col-span-6 {
-    grid-column: span 6 / span 6;
   }
   .container {
     width: 100%;
@@ -468,6 +460,12 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+  }
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
   }
   .block {
     display: block;
@@ -549,6 +547,9 @@
   }
   .h-screen {
     height: 100vh;
+  }
+  .max-h-\[90vh\] {
+    max-height: 90vh;
   }
   .max-h-\[calc\(85vh-120px\)\] {
     max-height: calc(85vh - 120px);
@@ -1497,6 +1498,9 @@
   .py-6 {
     padding-block: calc(var(--spacing) * 6);
   }
+  .py-8 {
+    padding-block: calc(var(--spacing) * 8);
+  }
   .py-20 {
     padding-block: calc(var(--spacing) * 20);
   }
@@ -1576,6 +1580,9 @@
     font-size: var(--text-xs);
     line-height: var(--tw-leading, var(--text-xs--line-height));
   }
+  .text-\[9px\] {
+    font-size: 9px;
+  }
   .text-\[10px\] {
     font-size: 10px;
   }
@@ -1621,6 +1628,10 @@
   .tracking-tight {
     --tw-tracking: var(--tracking-tight);
     letter-spacing: var(--tracking-tight);
+  }
+  .tracking-wide {
+    --tw-tracking: var(--tracking-wide);
+    letter-spacing: var(--tracking-wide);
   }
   .tracking-wider {
     --tw-tracking: var(--tracking-wider);
@@ -2051,6 +2062,9 @@
     }
     .hover\:text-rose-600:hover {
       color: var(--color-rose-600);
+    }
+    .hover\:text-slate-600:hover {
+      color: var(--color-slate-600);
     }
     .hover\:text-slate-700:hover {
       color: var(--color-slate-700);

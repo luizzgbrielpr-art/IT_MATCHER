@@ -18,6 +18,7 @@ import {
   Settings,
   LogOut,
   ChevronUp,
+  Building2,
 } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/components/auth/AuthContext';
@@ -25,13 +26,14 @@ import { LogoutModal } from '@/components/auth/LogoutModal';
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, switchAccountType } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { label: '🏢 Área da Empresa', href: '/empresa', icon: Building2 },
     { label: 'Vagas', href: '/vagas', icon: Briefcase },
     { label: 'Candidatos', href: '/candidatos', icon: Users },
     { label: 'Smart Matching', href: '/matching', icon: GitCompare },

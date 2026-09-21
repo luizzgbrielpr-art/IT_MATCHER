@@ -44,6 +44,9 @@ export const JobForm: React.FC = () => {
   const [companyType, setCompanyType] = useState<string>('Empresa de Tecnologia');
   const [companyIndustry, setCompanyIndustry] = useState<string>('Desenvolvimento de Software');
   const [companySize, setCompanySize] = useState<string>('51–200 funcionários');
+  const [companyCity, setCompanyCity] = useState('');
+  const [companyState, setCompanyState] = useState('');
+  const [companyCountry, setCompanyCountry] = useState('Brasil');
   const [companyLocation, setCompanyLocation] = useState('');
   const [companyWebsite, setCompanyWebsite] = useState('');
   const [companyDescription, setCompanyDescription] = useState('');
@@ -51,6 +54,8 @@ export const JobForm: React.FC = () => {
   // Novos Campos da Vaga
   const [workModel, setWorkModel] = useState<string>('Híbrido');
   const [location, setLocation] = useState('');
+  const [salaryMin, setSalaryMin] = useState<string>('');
+  const [salaryMax, setSalaryMax] = useState<string>('');
   const [salaryRange, setSalaryRange] = useState('');
   const [contractType, setContractType] = useState<string>('CLT');
   const [mandatoryRequirements, setMandatoryRequirements] = useState('');
@@ -75,8 +80,8 @@ export const JobForm: React.FC = () => {
 
     const totalWeight = skills.reduce((sum, s) => sum + (Number(s.weight) || 0), 0);
     if (totalWeight !== 100) {
-      setErrorMessage(`A soma dos pesos das competências está em ${totalWeight}%. Ela deve ser exatamente 100%.`);
-      showToast('Ajuste os pesos para totalizar 100%', 'warning');
+      setErrorMessage('Os pesos das skills devem totalizar 100%.');
+      showToast('Os pesos das skills devem totalizar 100%.', 'warning');
       return;
     }
 
@@ -100,17 +105,29 @@ export const JobForm: React.FC = () => {
           companyType,
           companyIndustry,
           companySize,
-          companyLocation,
+          companyCity,
+          companyState,
+          companyCountry,
+          companyLocation: companyLocation || [companyCity, companyState, companyCountry].filter(Boolean).join(', '),
           companyWebsite,
           companyDescription,
           workModel,
           location,
-          salaryRange,
+          salaryMin,
+          salaryMax,
+          salaryRange: salaryRange || (salaryMin && salaryMax ? `R$ ${salaryMin} - R$ ${salaryMax}` : undefined),
           contractType,
           mandatoryRequirements,
           desirableRequirements,
           benefits,
-          skills,
+          skills: skills.map(s => ({
+            name: s.name,
+            weight: s.weight,
+            required: s.required ?? true,
+            nome: s.name,
+            peso: s.weight,
+            obrigatoria: s.required ?? true,
+          })),
         }),
       });
 
@@ -204,19 +221,6 @@ export const JobForm: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Localização da Empresa
-            </label>
-            <input
-              type="text"
-              placeholder="Ex: São Paulo, SP, Brasil"
-              value={companyLocation}
-              onChange={(e) => setCompanyLocation(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
               Site da Empresa
             </label>
             <input
@@ -226,6 +230,42 @@ export const JobForm: React.FC = () => {
               onChange={(e) => setCompanyWebsite(e.target.value)}
               className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
             />
+          </div>
+
+          {/* Localização da Empresa: Cidade, Estado, País */}
+          <div className="md:col-span-2 space-y-2">
+            <span className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              Localização da Empresa
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <input
+                  type="text"
+                  placeholder="Cidade (ex: São Paulo)"
+                  value={companyCity}
+                  onChange={(e) => setCompanyCity(e.target.value)}
+                  className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Estado (ex: SP)"
+                  value={companyState}
+                  onChange={(e) => setCompanyState(e.target.value)}
+                  className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  placeholder="País (ex: Brasil)"
+                  value={companyCountry}
+                  onChange={(e) => setCompanyCountry(e.target.value)}
+                  className="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="md:col-span-2">
@@ -346,17 +386,27 @@ export const JobForm: React.FC = () => {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Faixa Salarial
-            </label>
-            <input
-              type="text"
-              placeholder="Ex: R$ 8.000 - R$ 12.000 ou A combinar"
-              value={salaryRange}
-              onChange={(e) => setSalaryRange(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
-            />
+          {/* Faixa Salarial: Mínimo e Máximo */}
+          <div className="space-y-1">
+            <span className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              Faixa Salarial (Mínimo e Máximo)
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="text"
+                placeholder="Salário mínimo (ex: R$ 8.000)"
+                value={salaryMin}
+                onChange={(e) => setSalaryMin(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+              />
+              <input
+                type="text"
+                placeholder="Salário máximo (ex: R$ 12.000)"
+                value={salaryMax}
+                onChange={(e) => setSalaryMax(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white"
+              />
+            </div>
           </div>
 
           <div className="md:col-span-2">

@@ -51,7 +51,14 @@ export type CompanySize =
 
 export type WorkModel = 'Presencial' | 'Híbrido' | 'Remoto';
 
-export type ContractType = 'CLT' | 'PJ' | 'Estágio' | 'Terceirizado' | 'Outro';
+export type ContractType =
+  | 'CLT'
+  | 'PJ'
+  | 'Estágio'
+  | 'Jovem Aprendiz'
+  | 'Temporário'
+  | 'Freelancer'
+  | 'Outro';
 
 export interface Job {
   id: string;
@@ -61,14 +68,23 @@ export interface Job {
   minExperienceYears: number;
   description: string;
   skills: JobSkill[];
-  status: 'ativa' | 'pausada' | 'fechada';
+  status: 'ativa' | 'pausada' | 'fechada' | 'Aguardando análise do recrutador' | 'Em análise pelo recrutador' | string;
   createdAt: string;
   updatedAt: string;
+
+  // Identificação e Vinculação da Empresa
+  companyId?: string;
+  companyName?: string;
+  companyEmail?: string;
+  cnpj?: string;
 
   // Informações da Empresa / Organização
   companyType?: CompanyType | string;
   companyIndustry?: CompanyIndustry | string;
   companySize?: CompanySize | string;
+  companyCity?: string;
+  companyState?: string;
+  companyCountry?: string;
   companyLocation?: string;
   companyWebsite?: string;
   companyDescription?: string;
@@ -76,6 +92,8 @@ export interface Job {
   // Informações Complementares da Vaga
   workModel?: WorkModel | string;
   location?: string;
+  salaryMin?: string | number;
+  salaryMax?: string | number;
   salaryRange?: string;
   contractType?: ContractType | string;
   mandatoryRequirements?: string;
@@ -89,17 +107,33 @@ export interface CreateJobInput {
   level: ProfessionalLevel;
   minExperienceYears: number;
   description: string;
-  skills: { name: string; weight: number; required?: boolean }[];
+  skills: {
+    name: string;
+    weight: number;
+    required?: boolean;
+    nome?: string;
+    peso?: number;
+    obrigatoria?: boolean;
+  }[];
 
+  companyId?: string;
+  companyName?: string;
+  companyEmail?: string;
+  cnpj?: string;
   companyType?: string;
   companyIndustry?: string;
   companySize?: string;
+  companyCity?: string;
+  companyState?: string;
+  companyCountry?: string;
   companyLocation?: string;
   companyWebsite?: string;
   companyDescription?: string;
 
   workModel?: string;
   location?: string;
+  salaryMin?: string | number;
+  salaryMax?: string | number;
   salaryRange?: string;
   contractType?: string;
   mandatoryRequirements?: string;

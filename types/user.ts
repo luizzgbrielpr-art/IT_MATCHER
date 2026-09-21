@@ -1,25 +1,50 @@
-export type UserRole = 'Recrutador' | 'Auditor' | 'Administrador';
+export type UserRole = 'RECRUITER' | 'COMPANY' | 'Recrutador' | 'Empresa' | 'Auditor' | 'Administrador';
+export type UserAccountType = 'recrutador' | 'empresa' | 'RECRUITER' | 'COMPANY';
+
+export interface CompanyData {
+  id?: string;
+  name: string;
+  cnpj?: string;
+  email: string;
+  phone?: string;
+  contactName?: string;
+  companyType?: string;
+  companyIndustry?: string;
+  companySize?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  website?: string;
+  description?: string;
+  jobId?: string;
+  createdAt?: string;
+}
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
+  role: UserRole | string;
+  tipoUsuario?: UserAccountType;
   avatarUrl?: string;
   company?: string;
   department?: string;
   phone?: string;
+  companyData?: CompanyData;
+  jobId?: string;
   createdAt?: string;
 }
 
 export interface UpdateUserProfileInput {
   name: string;
   email: string;
-  role?: UserRole;
+  role?: UserRole | string;
+  tipoUsuario?: UserAccountType;
   company?: string;
   department?: string;
   phone?: string;
   avatarUrl?: string;
+  companyData?: CompanyData;
 }
 
 export const CURRENT_USER: User = {
@@ -27,6 +52,7 @@ export const CURRENT_USER: User = {
   name: 'Ana Paula Silva',
   email: 'ana.recrutamento@itmatcher.com.br',
   role: 'Recrutador',
+  tipoUsuario: 'recrutador',
   company: 'IT Matcher Talent Systems',
   department: 'Aquisição de Talentos de TI',
   phone: '(11) 98765-4321',

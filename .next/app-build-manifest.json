@@ -21,15 +21,25 @@
       "static/chunks/main-app.js",
       "static/chunks/app/login/page.js"
     ],
-    "/vagas/page": [
+    "/empresa/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/vagas/page.js"
+      "static/chunks/app/empresa/page.js"
     ],
-    "/candidatos/page": [
+    "/api/empresa/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/candidatos/page.js"
+      "static/chunks/app/api/empresa/route.js"
+    ],
+    "/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/dashboard/page.js"
+    ],
+    "/auditoria/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/auditoria/page.js"
     ]
   }
 }

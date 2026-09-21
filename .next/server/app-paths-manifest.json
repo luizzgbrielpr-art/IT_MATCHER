@@ -1,5 +1,9 @@
 {
-  "/candidatos/page": "app/candidatos/page.js",
+  "/api/perfil/route": "app/api/perfil/route.js",
+  "/api/empresa/route": "app/api/empresa/route.js",
+  "/page": "app/page.js",
   "/login/page": "app/login/page.js",
-  "/page": "app/page.js"
+  "/empresa/page": "app/empresa/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/auditoria/page": "app/auditoria/page.js"
 }

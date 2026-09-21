@@ -9,4 +9,7 @@ export interface JobSkill {
   name: string;
   weight: number; // Peso percentual (ex: 30 para 30%)
   required?: boolean;
+  nome?: string;
+  peso?: number;
+  obrigatoria?: boolean;
 }

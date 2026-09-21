@@ -7,7 +7,10 @@ interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, pass: string) => Promise<boolean>;
+  login: (email: string, pass: string, isCompany?: boolean) => Promise<boolean>;
+  loginCompany: (email: string, pass: string) => Promise<boolean>;
+  registerCompany: (data: any) => Promise<boolean>;
+  switchAccountType: (type: 'recrutador' | 'empresa') => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -55,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkSession();
   }, []);
 
-  const login = async (email: string): Promise<boolean> => {
+  const login = async (email: string, pass: string, isCompany: boolean = false): Promise<boolean> => {
     setIsLoading(true);
     try {
       localStorage.setItem('itmatcher_session', 'true');
@@ -63,7 +66,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const res = await fetch('/api/perfil');
       const data = await res.json();
-      const loggedUser = data.success ? data.data : { ...CURRENT_USER, email: email || CURRENT_USER.email };
+
+      let loggedUser: User;
+      if (isCompany || email.includes('tech') || email.includes('empresa')) {
+        loggedUser = {
+          id: 'emp_tech_01',
+          name: 'Tech Solutions',
+          email: email || 'empresa@techsolutions.com.br',
+          role: 'Empresa',
+          tipoUsuario: 'empresa',
+          company: 'Tech Solutions',
+          companyData: {
+            id: 'emp_tech_01',
+            name: 'Tech Solutions',
+            email: email || 'empresa@techsolutions.com.br',
+            companyType: 'Empresa de Tecnologia',
+            companyIndustry: 'Desenvolvimento de Software',
+            companySize: '51–200 funcionários',
+            city: 'São Paulo',
+            state: 'SP',
+            country: 'Brasil',
+            website: 'https://techsolutions.com.br',
+            description: 'Empresa líder em desenvolvimento de software e ecossistemas digitais.',
+          }
+        };
+        await fetch('/api/perfil', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(loggedUser),
+        });
+      } else {
+        loggedUser = data.success ? data.data : { ...CURRENT_USER, email: email || CURRENT_USER.email };
+      }
       
       setUser(loggedUser);
       setIsAuthenticated(true);
@@ -73,6 +107,77 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(CURRENT_USER);
       setIsAuthenticated(true);
       return true;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginCompany = async (email: string, pass: string): Promise<boolean> => {
+    return login(email, pass, true);
+  };
+
+  const registerCompany = async (data: any): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/empresa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const resData = await response.json();
+      if (!response.ok || !resData.success) {
+        throw new Error(resData.error || 'Erro ao cadastrar empresa');
+      }
+
+      localStorage.setItem('itmatcher_session', 'true');
+      document.cookie = "itmatcher_session=true; path=/; max-age=86400;";
+      setUser(resData.data);
+      setIsAuthenticated(true);
+      return true;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const switchAccountType = async (type: 'recrutador' | 'empresa') => {
+    setIsLoading(true);
+    try {
+      let targetUser: User;
+      if (type === 'empresa') {
+        targetUser = {
+          id: user?.companyData?.id || 'emp_tech_01',
+          name: user?.companyData?.name || 'Tech Solutions',
+          email: user?.companyData?.email || 'empresa@techsolutions.com.br',
+          role: 'Empresa',
+          tipoUsuario: 'empresa',
+          company: user?.companyData?.name || 'Tech Solutions',
+          companyData: user?.companyData || {
+            id: 'emp_tech_01',
+            name: 'Tech Solutions',
+            email: 'empresa@techsolutions.com.br',
+            companyType: 'Empresa de Tecnologia',
+            companyIndustry: 'Desenvolvimento de Software',
+            companySize: '51–200 funcionários',
+            city: 'São Paulo',
+            state: 'SP',
+            country: 'Brasil',
+            website: 'https://techsolutions.com.br',
+            description: 'Empresa líder em desenvolvimento de software e ecossistemas digitais.',
+          }
+        };
+      } else {
+        targetUser = { ...CURRENT_USER };
+      }
+
+      await fetch('/api/perfil', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(targetUser),
+      });
+
+      setUser(targetUser);
+      setIsAuthenticated(true);
     } finally {
       setIsLoading(false);
     }
@@ -105,6 +210,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated,
         isLoading,
         login,
+        loginCompany,
+        registerCompany,
+        switchAccountType,
         logout,
         refreshUser,
       }}

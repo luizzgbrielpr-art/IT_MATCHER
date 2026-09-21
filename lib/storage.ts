@@ -8,7 +8,7 @@ class InMemoryDataStore {
   private candidates: Map<string, Candidate> = new Map();
   private reviews: Map<string, HumanReview> = new Map();
   private auditLogs: AuditLog[] = [];
-  private currentUser: User = { ...CURRENT_USER };
+  private companyAccounts: Map<string, User> = new Map();
 
   constructor() {
     this.seed();
@@ -19,9 +19,100 @@ class InMemoryDataStore {
     INITIAL_CANDIDATES.forEach((cand) => this.candidates.set(cand.id, { ...cand }));
     INITIAL_REVIEWS.forEach((rev) => this.reviews.set(`${rev.jobId}_${rev.candidateId}`, { ...rev }));
     this.auditLogs = [...INITIAL_AUDIT_LOGS];
+
+    // Seed de Empresa Padrão para demonstração imediata
+    const defaultCompany: User = {
+      id: 'emp_tech_01',
+      name: 'Tech Solutions',
+      email: 'empresa@techsolutions.com.br',
+      role: 'Empresa',
+      tipoUsuario: 'empresa',
+      company: 'Tech Solutions',
+      companyData: {
+        id: 'emp_tech_01',
+        name: 'Tech Solutions',
+        email: 'empresa@techsolutions.com.br',
+        companyType: 'Empresa de Tecnologia',
+        companyIndustry: 'Desenvolvimento de Software',
+        companySize: '51–200 funcionários',
+        city: 'São Paulo',
+        state: 'SP',
+        country: 'Brasil',
+        website: 'https://techsolutions.com.br',
+        description: 'Empresa líder em desenvolvimento de software e ecossistemas digitais.',
+        createdAt: new Date().toISOString(),
+      }
+    };
+    this.companyAccounts.set(defaultCompany.email.toLowerCase(), defaultCompany);
   }
 
-  // --- PERFIL DO RECRUTADOR ---
+  // --- CONTAS DE EMPRESA & AUTENTICAÇÃO ---
+  public getCompanyByEmail(email: string): User | undefined {
+    return this.companyAccounts.get(email.toLowerCase().trim());
+  }
+
+  public registerCompany(input: any): User {
+    const emailKey = input.email.toLowerCase().trim();
+    if (this.companyAccounts.has(emailKey)) {
+      throw new Error('Este e-mail já está vinculado a uma empresa.');
+    }
+
+    const companyId = `emp-${Date.now().toString().slice(-4)}`;
+    const newCompanyUser: User = {
+      id: companyId,
+      name: input.name,
+      email: input.email.trim(),
+      role: 'COMPANY',
+      tipoUsuario: 'empresa',
+      company: input.name,
+      companyData: {
+        id: companyId,
+        name: input.name,
+        cnpj: input.cnpj || '00.000.000/0001-00',
+        email: input.email.trim(),
+        phone: input.phone || '',
+        contactName: input.contactName || '',
+        companyType: input.companyType || 'Empresa de Tecnologia',
+        companyIndustry: input.companyIndustry || 'Desenvolvimento de Software',
+        companySize: input.companySize || '51–200 funcionários',
+        city: input.city || 'São Paulo',
+        state: input.state || 'SP',
+        country: input.country || 'Brasil',
+        website: input.website || '',
+        description: input.description || '',
+        createdAt: new Date().toISOString(),
+      }
+    };
+
+    this.companyAccounts.set(emailKey, newCompanyUser);
+
+    this.addAuditLog(
+      createAuditLogEntry('CANDIDATE_CREATED', `Empresa "${newCompanyUser.name}" (${newCompanyUser.email}) cadastrada com sucesso.`, {
+        companyId: newCompanyUser.id,
+        companyName: newCompanyUser.name,
+        cnpj: newCompanyUser.companyData?.cnpj,
+      })
+    );
+
+    return newCompanyUser;
+  }
+
+  public getCompanyAccounts(): User[] {
+    return Array.from(this.companyAccounts.values());
+  }
+
+  public setCurrentUser(user: User): User {
+    this.currentUser = { ...user };
+    return { ...this.currentUser };
+  }
+
+  public getCompanyJob(companyIdOrEmail: string): Job | undefined {
+    return Array.from(this.jobs.values()).find(
+      (job) => job.companyId === companyIdOrEmail || job.companyId === companyIdOrEmail.toLowerCase()
+    );
+  }
+
+  // --- PERFIL DO USUÁRIO ATIVO ---
   public getUserProfile(): User {
     return { ...this.currentUser };
   }
@@ -32,10 +123,17 @@ class InMemoryDataStore {
       ...input,
     };
 
+    if (input.companyData) {
+      this.currentUser.companyData = { ...input.companyData };
+      if (this.currentUser.email) {
+        this.companyAccounts.set(this.currentUser.email.toLowerCase(), { ...this.currentUser });
+      }
+    }
+
     this.addAuditLog(
       createAuditLogEntry(
         'REVIEW_UPDATED',
-        `Perfil do recrutador "${this.currentUser.name}" atualizado com sucesso.`,
+        `Perfil de "${this.currentUser.name}" atualizado com sucesso.`,
         {
           actor: {
             name: this.currentUser.name,
@@ -60,6 +158,16 @@ class InMemoryDataStore {
   }
 
   public createJob(input: CreateJobInput): Job {
+    // REGRA DE NEGÓCIO E SEGURANÇA 5 & 11: UMA ÚNICA VAGA POR EMPRESA
+    const companyIdentifier = input.companyId || (this.currentUser.tipoUsuario === 'empresa' ? (this.currentUser.companyData?.id || this.currentUser.email) : undefined);
+
+    if (companyIdentifier) {
+      const existingCompanyJob = this.getCompanyJob(companyIdentifier);
+      if (existingCompanyJob) {
+        throw new Error('Esta conta já possui uma vaga cadastrada.');
+      }
+    }
+
     const id = `vaga-${Date.now().toString().slice(-4)}`;
     const now = new Date().toISOString();
     
@@ -70,24 +178,38 @@ class InMemoryDataStore {
       level: input.level,
       minExperienceYears: input.minExperienceYears,
       description: input.description,
-      skills: input.skills.map((s, idx) => ({
-        id: `sk-${Date.now()}-${idx}`,
-        name: s.name,
-        weight: s.weight,
-        required: s.required !== undefined ? s.required : true,
-      })),
+      skills: input.skills.map((s, idx) => {
+        const name = s.name || s.nome || '';
+        const weight = s.weight !== undefined ? s.weight : (s.peso !== undefined ? s.peso : 0);
+        const required = s.required !== undefined ? s.required : (s.obrigatoria !== undefined ? s.obrigatoria : true);
+        return {
+          id: `sk-${Date.now()}-${idx}`,
+          name,
+          weight,
+          required,
+          nome: name,
+          peso: weight,
+          obrigatoria: required,
+        };
+      }),
       status: 'ativa',
       createdAt: now,
       updatedAt: now,
-      companyType: input.companyType,
-      companyIndustry: input.companyIndustry,
-      companySize: input.companySize,
-      companyLocation: input.companyLocation,
-      companyWebsite: input.companyWebsite,
-      companyDescription: input.companyDescription,
+      companyId: companyIdentifier,
+      companyType: input.companyType || this.currentUser.companyData?.companyType,
+      companyIndustry: input.companyIndustry || this.currentUser.companyData?.companyIndustry,
+      companySize: input.companySize || this.currentUser.companyData?.companySize,
+      companyCity: input.companyCity || this.currentUser.companyData?.city,
+      companyState: input.companyState || this.currentUser.companyData?.state,
+      companyCountry: input.companyCountry || this.currentUser.companyData?.country,
+      companyLocation: input.companyLocation || (this.currentUser.companyData ? `${this.currentUser.companyData.city}, ${this.currentUser.companyData.state}, ${this.currentUser.companyData.country}` : [input.companyCity, input.companyState, input.companyCountry].filter(Boolean).join(', ')),
+      companyWebsite: input.companyWebsite || this.currentUser.companyData?.website,
+      companyDescription: input.companyDescription || this.currentUser.companyData?.description,
       workModel: input.workModel,
       location: input.location,
-      salaryRange: input.salaryRange,
+      salaryMin: input.salaryMin,
+      salaryMax: input.salaryMax,
+      salaryRange: input.salaryRange || (input.salaryMin && input.salaryMax ? `R$ ${input.salaryMin} - R$ ${input.salaryMax}` : undefined),
       contractType: input.contractType,
       mandatoryRequirements: input.mandatoryRequirements,
       desirableRequirements: input.desirableRequirements,
@@ -95,6 +217,13 @@ class InMemoryDataStore {
     };
 
     this.jobs.set(id, newJob);
+
+    if (this.currentUser.tipoUsuario === 'empresa') {
+      this.currentUser.jobId = id;
+      if (this.currentUser.companyData) {
+        this.currentUser.companyData.jobId = id;
+      }
+    }
 
     // Registro de auditoria RG10
     const weightsMap: Record<string, number> = {};
